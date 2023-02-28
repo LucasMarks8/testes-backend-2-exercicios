@@ -1,12 +1,12 @@
 import { UserDatabase } from "../database/UserDatabase"
-import { GetAllOutputDTO, LoginInputDTO, LoginOutputDTO, SignupInputDTO, SignupOutputDTO } from "../dtos/userDTO";
+import { DeleteUserInputDTO, GetAllOutputDTO, GetUserByIdInputDTO, LoginInputDTO, LoginOutputDTO, SignupInputDTO, SignupOutputDTO } from "../dtos/userDTO";
 import { BadRequestError } from "../errors/BadRequestError";
 import { NotFoundError } from "../errors/NotFoundError";
 import { User } from "../models/User";
 import { HashManager } from "../services/HashManager";
 import { IdGenerator } from "../services/IdGenerator";
 import { TokenManager } from "../services/TokenManager";
-import { TokenPayload, UserDB, USER_ROLES } from "../types";
+import { TokenPayload, UserDB, UserModel, USER_ROLES } from "../types";
 
 export class UserBusiness {
     constructor(
@@ -14,7 +14,7 @@ export class UserBusiness {
         private idGenerator: IdGenerator,
         private tokenManager: TokenManager,
         private hashManager: HashManager
-    ) {}
+    ) { }
 
     public signup = async (input: SignupInputDTO): Promise<SignupOutputDTO> => {
         const { name, email, password } = input
@@ -100,11 +100,11 @@ export class UserBusiness {
 
         const isPasswordCorrect = await this.hashManager
             .compare(password, hashedPassword)
-        
+
         if (!isPasswordCorrect) {
             throw new BadRequestError("'password' incorreto")
         }
-        
+
         const payload: TokenPayload = {
             id: user.getId(),
             name: user.getName(),
@@ -137,5 +137,64 @@ export class UserBusiness {
         })
 
         return output
+    }
+
+    public delete = async (input: DeleteUserInputDTO) => {
+        const { idToDelete, token } = input
+
+        if (token === undefined) {
+            throw new BadRequestError("token é necessário");
+        }
+
+        const payload = this.tokenManager.getPayload(token)
+
+        if (payload === null) {
+            throw new BadRequestError("Usuário não está logado")
+        }
+
+        const userDBExists = await this.userDatabase.findById(idToDelete)
+
+        if (!userDBExists) {
+            throw new NotFoundError("'id' não encontrado")
+        }
+
+        await this.userDatabase.deleteUser(idToDelete)
+
+        const outPut = {
+            message: "usuário deletado",
+        }
+
+        return outPut
+    }
+
+    public getUserById = async (input: GetUserByIdInputDTO): Promise<UserModel> => {
+        const { idToSearch, token } = input
+
+        if (token === undefined) {
+            throw new BadRequestError("token é necessário");
+        }
+
+        const payload = this.tokenManager.getPayload(token)
+
+        if (payload === null) {
+            throw new BadRequestError("Usuário não está logado")
+        }
+
+        const userDBExists = await this.userDatabase.findById(idToSearch)
+
+        if (!userDBExists) {
+            throw new NotFoundError("'id' não encontrado")
+        }
+
+        const user = new User(
+            userDBExists.id,
+            userDBExists.name,
+            userDBExists.email,
+            userDBExists.password,
+            userDBExists.role,
+            userDBExists.created_at
+        ).toBusinessModel()
+
+        return user
     }
 }

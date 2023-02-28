@@ -1,12 +1,12 @@
 import { Request, Response } from "express"
 import { UserBusiness } from "../business/UserBusiness"
-import { LoginInputDTO, SignupInputDTO, SignupOutputDTO } from "../dtos/userDTO"
+import { DeleteUserInputDTO, GetUserByIdInputDTO, LoginInputDTO, SignupInputDTO, SignupOutputDTO } from "../dtos/userDTO"
 import { BaseError } from "../errors/BaseError"
 
 export class UserController {
     constructor(
         private userBusiness: UserBusiness
-    ) {}
+    ) { }
 
     public signup = async (req: Request, res: Response) => {
         try {
@@ -52,6 +52,46 @@ export class UserController {
     public getAll = async (req: Request, res: Response) => {
         try {
             const output = await this.userBusiness.getAll()
+
+            res.status(200).send(output)
+        } catch (error) {
+            console.log(error)
+            if (error instanceof BaseError) {
+                res.status(error.statusCode).send(error.message)
+            } else {
+                res.status(500).send("Erro inesperado")
+            }
+        }
+    }
+
+    public delete = async (req: Request, res: Response) => {
+        try {
+            const input: DeleteUserInputDTO = {
+                idToDelete: req.params.id,
+                token: req.headers.authorization
+            }
+
+            const output = await this.userBusiness.delete(input)
+
+            res.status(200).send(output)
+        } catch (error) {
+            console.log(error)
+            if (error instanceof BaseError) {
+                res.status(error.statusCode).send(error.message)
+            } else {
+                res.status(500).send("Erro inesperado")
+            }
+        }
+    }
+
+    public getUserById = async (req: Request, res: Response) => {
+        try {
+            const input: GetUserByIdInputDTO = {
+                idToSearch: req.params.id,
+                token: req.headers.authorization
+            }
+
+            const output = await this.userBusiness.getUserById(input)
 
             res.status(200).send(output)
         } catch (error) {
