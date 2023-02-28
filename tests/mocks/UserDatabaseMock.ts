@@ -53,4 +53,14 @@ export class UserDatabaseMock extends BaseDatabase {
             }
         ]
     }
-}
+
+    public deleteUser = async (id: string): Promise<void> => {
+        // não precisa retornar nada, porque é void
+    }
+
+    public findById = async (id: string): Promise<UserDB | undefined> => {
+       const userById = (await this.getAll()).find(value => id === value.id)
+
+       return userById
+    }
+ }

@@ -20,3 +20,14 @@ export interface LoginOutputDTO {
 }
 
 export type GetAllOutputDTO = UserModel[]
+
+export interface DeleteUserInputDTO {
+    idToDelete: string,
+    token: string | undefined
+}
+
+export interface GetUserByIdInputDTO {
+    idToSearch: string,
+    token: string | undefined
+}
+
